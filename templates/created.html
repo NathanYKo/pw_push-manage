@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Link Created - Password Pusher</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+    <h1>Password Link Created</h1>
+    <nav>
+        <a href="{{ url_for('home') }}">Home</a> |
+        <a href="{{ url_for('my_passwords') }}">My Passwords</a> |
+        <a href="{{ url_for('logout') }}">Logout</a>
+    </nav>
+    <p>Your password can be accessed at:</p>
+    <p><a href="{{ url_for('get_password', url=url, _external=True) }}">{{ url_for('get_password', url=url, _external=True) }}</a></p>
+    <p>Share this link with the intended recipient.</p>
+    <a href="{{ url_for('home') }}">Create Another Password</a>
+</div>
+</body>
+</html>
