@@ -122,7 +122,7 @@ cache.init_app(app)
 def home():
     login_error = None
     username = None
-
+    x = 'wow'
     if request.method == 'POST':
         action = request.form.get('action')
         
