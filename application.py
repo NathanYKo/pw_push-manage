@@ -7,6 +7,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from cryptography.fernet import Fernet
 import base64
 
+from flask_caching import Cache
+
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Change this to a secure random key
@@ -112,7 +114,10 @@ def login():
     return render_template('login.html', error=error, username=username)
 
 
+cache = Cache(config={'CACHE_TYPE': 'simple'})
+cache.init_app(app)
 
+@cache.cached(timeout=300) 
 @app.route('/', methods=['GET', 'POST'])
 def home():
     login_error = None
