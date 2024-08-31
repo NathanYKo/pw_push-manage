@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirm Logout - Password Pusher</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Confirm Logout</h1>
+        <p>Are you sure you want to log out?</p>
+        <form action="{{ url_for('logout') }}">
+            <input type="submit" value="Yes, Log Out">
+        </form>
+        <a href="{{ url_for('home') }}">No, Take Me Back</a>
+    </div>
+</body>
+</html>

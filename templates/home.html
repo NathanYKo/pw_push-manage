@@ -5,32 +5,129 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Password Pusher</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+        }
+        .auth-section {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        .auth-form {
+            display: none;
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .auth-form.show {
+            display: block;
+        }
+        .auth-form input {
+            margin-bottom: 5px;
+            width: 150px;
+        }
+        .auth-toggle {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-left: 5px;
+        }
+        .error-message {
+            color: red;
+            margin-top: 5px;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
-    <h1>Password Pusher</h1>
-    <nav>
-        <a href="{{ url_for('home') }}">Home</a> |
-        <a href="{{ url_for('my_passwords') }}">My Passwords</a> |
-        <a href="{{ url_for('logout') }}">Logout</a>
-    </nav>
-    <form method="POST" action="{{ url_for('home') }}">
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" required>
-        <br>
-        <label for="expiration">Expiration:</label>
-        <select id="expiration" name="expiration" required>
-            <option value="1">1 hour</option>
-            <option value="4">4 hours</option>
-            <option value="12">12 hours</option>
-            <option value="24">24 hours</option>
-        </select>
-        <br>
-        <label for="max_views">Max Views:</label>
-        <input type="number" id="max_views" name="max_views" value="1" min="1" required>
-        <br>
-        <input type="submit" value="Create Password Link">
-    </form>
-</div>
+        <div class="auth-section">
+            {% if not logged_in %}
+                <button class="auth-toggle" onclick="toggleForm('loginForm')">Login</button>
+                <button class="auth-toggle" onclick="toggleForm('registerForm')">Register</button>
+                <form class="auth-form {% if login_error %}show{% endif %}" id="loginForm" method="POST" action="{{ url_for('home') }}">
+                    <input type="text" name="username" placeholder="Username" required value="{{ username or '' }}">
+                    <input type="password" name="password" placeholder="Password" required>
+                    <input type="submit" name="action" value="Login">
+                    {% if login_error %}
+                        <p class="error-message">{{ login_error }}</p>
+                    {% endif %}
+                </form>
+                <form class="auth-form" id="registerForm" method="POST" action="{{ url_for('register') }}">
+                    <input type="text" name="username" placeholder="Username" required>
+                    <input type="password" name="password" placeholder="Password" required>
+                    <input type="submit" value="Register">
+                </form>
+            {% else %}
+                <a href="{{ url_for('view_passwords') }}">My Passwords</a> |
+                <a href="{{ url_for('logout') }}">Logout</a>
+            {% endif %}
+        </div>
+
+        <h1>Password Pusher</h1>
+        
+        <form method="POST" action="{{ url_for('home') }}">
+            <label for="password">Password to push:</label>
+            <input type="password" id="password" name="password" required>
+            
+            <label for="expiration">Expiration time:</label>
+            <select id="expiration" name="expiration" required>
+                <option value="1">1 hour</option>
+                <option value="4">4 hours</option>
+                <option value="12">12 hours</option>
+                <option value="24">24 hours</option>
+            </select>
+            
+            <label for="max_views">Maximum views:</label>
+            <input type="number" id="max_views" name="max_views" value="1" min="1" required>
+            
+            <input type="submit" name="action" value="Push Password">
+        </form>
+
+        {% if not logged_in %}
+        <p><small>Login or register to save and manage your pushed passwords.</small></p>
+        {% endif %}
+    </div>
+
+    <script>
+        function toggleForm(formId) {
+            var forms = document.getElementsByClassName('auth-form');
+            for (var i = 0; i < forms.length; i++) {
+                forms[i].classList.remove('show');
+            }
+            var form = document.getElementById(formId);
+            form.classList.add('show');
+            event.stopPropagation();
+        }
+
+
+
+        // Hide forms when clicking outside
+        document.addEventListener('click', function(event) {
+            var authSection = document.querySelector('.auth-section');
+            var forms = document.getElementsByClassName('auth-form');
+            
+            if (!authSection.contains(event.target)) {
+                for (var i = 0; i < forms.length; i++) {
+                    forms[i].classList.remove('show');
+                }
+            }
+        });
+
+        // Prevent form hiding when clicking inside the form
+        var forms = document.getElementsByClassName('auth-form');
+        for (var i = 0; i < forms.length; i++) {
+            forms[i].addEventListener('click', function(event) {
+                event.stopPropagation();
+            });
+        }
+    </script>
 </body>
 </html>

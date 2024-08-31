@@ -1,0 +1,15 @@
+# Ignore version control files
+.git
+.gitignore
+
+# Ignore Python compiled files
+*.pyc
+__pycache__
+
+# Ignore local development files
+venv/
+*.log
+
+# Do NOT ignore these files
+!Dockerfile
+!Dockerrun.aws.json

@@ -2,10 +2,11 @@ import secrets
 import string
 import datetime
 import sqlite3
-from flask import Flask, request, render_template, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, flash
 from werkzeug.security import generate_password_hash, check_password_hash
 from cryptography.fernet import Fernet
 import base64
+
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Change this to a secure random key
@@ -110,39 +111,66 @@ def login():
     
     return render_template('login.html', error=error, username=username)
 
-@app.route('/logout')
-def logout():
-    session.pop('user_id', None)
-    return redirect(url_for('login'))
+
 
 @app.route('/', methods=['GET', 'POST'])
 def home():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
+    login_error = None
+    username = None
 
     if request.method == 'POST':
-        password = request.form['password']
-        expiration_hours = int(request.form['expiration'])
-        max_views = int(request.form['max_views'])
-        url = generate_unique_url()
+        action = request.form.get('action')
+        
+        if action == 'Push Password':
+            # Handle password pushing (unchanged)
+            password = request.form['password']
+            expiration_hours = int(request.form['expiration'])
+            max_views = int(request.form['max_views'])
+            url = generate_unique_url()
 
-        conn = sqlite3.connect('passwords.db')
-        c = conn.cursor()
-        c.execute('''INSERT INTO pushed_passwords 
-                     (url, password, expiration, max_views, current_views, user_id) 
-                     VALUES (?, ?, ?, ?, ?, ?)''', 
-                  (url, password, datetime.datetime.now() + datetime.timedelta(hours=expiration_hours), max_views, 0, session['user_id']))
-        conn.commit()
-        conn.close()
+            conn = sqlite3.connect('passwords.db')
+            c = conn.cursor()
+            c.execute('''INSERT INTO pushed_passwords 
+                         (url, password, expiration, max_views, current_views, user_id) 
+                         VALUES (?, ?, ?, ?, ?, ?)''', 
+                      (url, password, datetime.datetime.now() + datetime.timedelta(hours=expiration_hours), 
+                       max_views, 0, session.get('user_id')))
+            conn.commit()
+            conn.close()
 
-        return redirect(url_for('password_created', url=url))
-    return render_template('home.html')
+            return redirect(url_for('password_created', url=url))
+        
+        elif action == 'Login':
+            # Handle login
+            username = request.form['username']
+            password = request.form['password']
+            
+            conn = sqlite3.connect('passwords.db')
+            c = conn.cursor()
+            c.execute('SELECT * FROM users WHERE username = ?', (username,))
+            user = c.fetchone()
+            conn.close()
+            
+            if user and check_password_hash(user[2], password):
+                session['user_id'] = user[0]
+                flash('Logged in successfully!', 'success')
+                return redirect(url_for('home'))
+            else:
+                login_error = 'Invalid username or password'
+
+    return render_template('home.html', logged_in=('user_id' in session), login_error=login_error, username=username)
 
 @app.route('/created/<url>')
 def password_created(url):
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    return render_template('created.html', url=url)
+    conn = sqlite3.connect('passwords.db')
+    c = conn.cursor()
+    c.execute('SELECT user_id FROM pushed_passwords WHERE url = ?', (url,))
+    result = c.fetchone()
+    conn.close()
+
+    is_owner = result and result[0] == session.get('user_id')
+    
+    return render_template('created.html', url=url, is_owner=is_owner)
 
 @app.route('/get/<url>', methods=['GET'])
 def get_password(url):
@@ -270,6 +298,12 @@ def search_passwords():
     decrypted_passwords = [(id, website, username, decrypt_password(encrypted_password), notes) for id, website, username, encrypted_password, notes in passwords]
     
     return render_template('view_passwords.html', passwords=decrypted_passwords, query=query)
+
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('home'))
 
 if __name__ == '__main__':
     init_db()
